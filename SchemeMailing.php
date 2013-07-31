@@ -1,3 +1,5 @@
+<?php
+/*
 Copyright (c) 2013, Philip Morrell
 All rights reserved.
 
@@ -25,3 +27,31 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+class SchemeMailing {
+
+	private $fieldName = 'scheme_id';
+	private $dests = array(
+		'SERV' => 'dest1@example.com',
+		'BHA'  => 'dest2@example.com',
+	);
+
+	function addEventHandlers (RequestContext $ctx) {
+		$ctx->addEventHandler(MailerEvent::PRE_MAIL, $this, 'sendTo');
+	}
+
+	function sendTo (MailerEvent $event) {
+		$field = $event->document->pages[0]->fields[$this->fieldName];
+		$value = strtoupper(trim($field->value));
+
+		foreach ($this->dests as $prefix => $dest) {
+			if (substr($value, 0, strlen($prefix)) === strtoupper($prefix)) {
+
+				g_Log(__METHOD__ . ": Scheme prefix '$prefix' found, sending to '$dest'");
+				$event->mailDeliverer->recipients[] = $dest;
+				break;
+			}
+		}
+	}
+}

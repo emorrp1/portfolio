@@ -1,4 +1,4 @@
 portfolio
 =========
 
-A portfolio of my contracting work under BSD corporate-friendly licence
+A portfolio of the contracting work I've done under the corporate-friendly BSD licence
