@@ -46,30 +46,43 @@ class AuditScore {
 	function calculateScores (ActionEvent $event) {
 		$sections = json_decode(file_get_contents(dirname(__FILE__) . "/$this->file"), TRUE);
 		$pgs = $event->document->pages;
+		$p1 = $pgs[0]->fields;
 
 		$compliance = 0;
 		foreach ($sections as $n => $pages) {
+			$score[$n]['yes'] = 0;
+			$score[$n]['no'] = 0;
+			$score[$n]['na'] = 0;
 			foreach ($pages as $p => $fields) {
 
 				$page = $pgs[$p]->fields;
 				foreach ($fields as $f) {
-					$score[$n][$page[$f]->value]++;
+					$value = $page[$f]->value;
+					// ignore unanswered questions
+					if ($value) $score[$n][$value]++;
 				}
 			}
 
+			// Calculate percentage compliance
 			$scored = $score[$n]['yes'] + $score[$n]['no'];
 			$percent = ($scored ? 100 * $score[$n]['yes'] / $scored : 0);
 			$compliance += $percent;
+			// round and pad to box
+			$percent = str_pad(round($percent), 3, ' ', STR_PAD_LEFT);
+			$p1['p1_sec' . $n . '_percent']->value = $percent;
 
 			// $page will now be last page of section
 			$base = 'p' . ($p+1) . '_sec' . $n . '_';
-			$page[$base . 'yes_percent']->value = round($percent);
+			$page[$base . 'yes_percent']->value = $percent;
 			foreach ($score[$n] as $column => $total) {
-				$page[$base . $column . '_total']->value = $total;
+				$page[$base . $column . '_total']->value = str_pad($total, 2, ' ', STR_PAD_LEFT);
 			}
 		}
 
-		g_Log(__METHOD__ . ': Overall score ' . round($compliance/14) . '%');
+		// Record total
+		$compliance = str_pad(round($compliance / 14), 3, ' ', STR_PAD_LEFT);
+		$p1['p1_total_percent']->value = $compliance;
+		g_Log(__METHOD__ . ': Overall score ' . $compliance . '%');
 	}
 
 	function regenPDF (ViewerEvent $event) {
